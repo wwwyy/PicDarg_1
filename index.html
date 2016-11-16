@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style type="text/css">
+		img{
+			position: absolute;
+			width: 250px;
+			height: 150px;
+			vertical-align: top;
+		}
+		#wrap {
+			width: 1125px;
+			height: 510px;
+			padding: 10px 0;
+			border: 10px dashed #85c8e8;
+			position: relative;
+			margin: 100px auto 0;
+		}
+		#btns {
+			width: 1125px;
+			height: 40px;
+			margin: 30px auto;
+			text-align: center;
+		}
+		#btn1,
+		#btn2 {
+			display: inline-block;
+			-webkit-appearance: none;
+			width: 120px;
+			height: 40px;
+			text-align: center;
+			font: bold 18px/40px Verdana;
+			color: #fff;
+			background: rgb(254,67,101);
+			outline: none;
+		}
+	</style>
+</head>
+<body>
+	<div id="wrap"></div>
+	<div id="btns">
+		<input type="button" value="One Step" id="btn1">
+		<input type="button" value="Two Step" id="btn2">
+	</div>
+</body>
+<script type="text/javascript">
+	(function(d){
+	// 1.点击btn1,图片随机排序
+	// 2.图片拖动,与最近的图片交换位置
+	// 3.拖动图片,图片插入最近的图片之后的位置
+
+	//-------------------------------------
+	// 变量声明部分 :
+	var wrap = d.getElementById('wrap')
+	var btn1 = d.getElementById('btn1')
+	var btn2 = d.getElementById('btn2')
+	var imgs = d.getElementsByTagName('img');
+	var arr = [];
+	var nub = [];
+	var cj = 11;
+	var n = 0;
+	var two = false;
+	var imgZb = [];
+	var h = 0;
+	var thisNub = 0;
+	//-------------------------------------
+	// 代码初始化:
+	createImg();//
+	sortImg();
+	darg1()
+	//-------------------------------------
+	//需求1:生成图片;
+	function createImg(){
+		for (var i = 0; i < 12; i++) {
+			var img = d.createElement('img');
+			img.src = 'img/'+(i+1)+'.jpg';
+			img.style.top = 10+180*Math.floor(i/4)+'px';
+			img.style.left = 25+275*(i%4)+'px';
+			wrap.appendChild(img);
+		}
+	}
+	//需求2:点击btn1,图片随机排序
+	function sortImg(){
+		btn1.onclick = function(){
+			for (var i = 0; i < imgs.length; i++) {
+				arr.push(imgs[i].src)
+				nub.push(i)
+			}
+			nub.sort(function(){
+				return 0.5 - Math.random();
+			});
+			for (var i = 0; i < imgs.length; i++) {
+				imgs[i].src = arr[nub.shift()];
+			}
+		}
+	}
+	// 需求3:图片拖动,与最近的图片交换位置
+	// 需求4:插入图片
+	btn2.onclick = function(){
+		two = true;
+	}
+	function darg1(){
+		for (var i = 0; i < imgs.length; i++) {
+			imgs[i].addEventListener('mousedown', fn1)
+			function fn1(ev){
+				cj++;
+				var disX = ev.pageX - this.offsetLeft;
+				var disY = ev.pageY - this.offsetTop;
+				var oldL = this.offsetLeft;
+				var oldT = this.offsetTop;
+				this.style.zIndex = cj;
+				var _this = this;
+				for (var i = 0; i < imgs.length; i++) {
+					imgZb.push(imgs[i].getBoundingClientRect())
+					if (imgs[i]==this) {
+						thisNub = i;
+					}
+				}
+				d.addEventListener('mousemove',fn2)
+				function fn2(ev){
+					_this.style.left = ev.pageX - disX +'px';
+					_this.style.top = ev.pageY - disY +'px';
+				}
+				d.addEventListener('mouseup',fn3)
+				function fn3(){
+					d.removeEventListener('mousemove',fn2)
+					d.removeEventListener('mouseup',fn3);
+					var arrImg = [];
+					var minNub = [];
+					var newMin  = [];
+					var onOff = false;
+					for (var i = 0; i < imgs.length; i++) {
+						if(duang(imgs[i],_this)&&imgs[i]!=_this){
+							arrImg.push(imgs[i]);
+							onOff = true;
+						} 
+					}
+					for (var j = 0; j < arrImg.length; j++) {
+						minNub.push(Math.pow(((arrImg[j].offsetLeft+arrImg[j].offsetWidth/2)-(_this.offsetLeft+_this.offsetWidth/2)),2)+Math.pow(((arrImg[j].offsetTop+arrImg[j].offsetHeight/2)-(_this.offsetTop+_this.offsetHeight/2)),2))
+					}
+					if (onOff==false) {
+						_this.style.left = oldL+'px';
+						_this.style.top = oldT+'px';
+						return
+					}
+					for (var i = 0; i < minNub.length; i++) {
+						newMin.push(minNub[i])
+					}
+					newMin.sort(function(a,b){
+						return a - b;
+					})
+					
+					for (var i = 0; i < minNub.length; i++) {
+						if (minNub[i]==newMin[0]) {
+							n = i;
+						}
+					}
+					_this.style.left = arrImg[n].offsetLeft+'px';
+					_this.style.top = arrImg[n].offsetTop+'px';
+					arrImg[n].style.left = oldL+'px';
+					arrImg[n].style.top = oldT +'px';
+				}
+				ev.preventDefault()
+			}
+		}
+	}
+	// 碰撞:
+	function duang(obj1,obj2){
+			var l1 = obj1.offsetLeft;
+			var t1 = obj1.offsetTop;
+			var b1 = t1 + obj1.offsetHeight;
+			var r1 = l1 + obj1.offsetWidth;
+			
+			var l2 = obj2.offsetLeft;
+			var t2 = obj2.offsetTop;
+			var b2 = t2 + obj2.offsetHeight;
+			var r2 = l2 + obj2.offsetWidth;
+			
+			if(r1 < l2 || b1 < t2 || l1 > r2 || t1 > b2){
+				//没碰到
+				return false;
+			}else{
+				//碰到了
+				return true;
+			}
+		}
+	})(document)
+</script>
+</html>
